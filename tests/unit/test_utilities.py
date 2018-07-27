@@ -8,7 +8,7 @@ import copy
 from tavern.schemas.extensions import validate_extensions
 from tavern.util import exceptions
 from tavern.util.loader import ANYTHING, IncludeLoader
-from tavern.util.dict_util import deep_dict_merge, check_keys_match_recursive
+from tavern.util.dict_util import deep_dict_merge, check_keys_match_recursive, format_keys
 
 
 class TestValidateFunctions:
@@ -263,6 +263,8 @@ def fix_test_yaml():
         request:
           url: http://localhost:5000/double
           json:
+            is_sensitive: !bool "False"
+            raw_str: !raw '{"query": "{ val1 { val2 { val3 { val4, val5 } } } }"}'
             number: !int '5'
             return_float: !bool "True"
           method: POST
@@ -278,10 +280,43 @@ def fix_test_yaml():
 
 
 class TestCustomTokens:
+    def assert_type_value(self, test_value, expected_type, expected_value):
+        assert isinstance(test_value, expected_type)
+        assert test_value == expected_value
 
     def test_conversion(self, test_yaml):
         stages = yaml.load(test_yaml, Loader=IncludeLoader)['stages'][0]
 
-        assert isinstance(stages['request']['json']['number'], int)
-        assert isinstance(stages['response']['body']['double'], float)
-        assert isinstance(stages['request']['json']['return_float'], bool)
+        self.assert_type_value(stages['request']['json']['number'], int, 5)
+        self.assert_type_value(stages['response']['body']['double'], float, 10.0)
+        self.assert_type_value(stages['request']['json']['return_float'], bool, True)
+        self.assert_type_value(stages['request']['json']['is_sensitive'], bool, False)
+        self.assert_type_value(
+            stages['request']['json']['raw_str'],
+            str,
+            '{{"query": "{{ val1 {{ val2 {{ val3 {{ val4, val5 }} }} }} }}"}}'
+        )
+
+
+class TestFormatKeys:
+
+    def test_format_missing_raises(self):
+        to_format = {
+            "a": "{b}",
+        }
+
+        with pytest.raises(exceptions.MissingFormatError):
+            format_keys(to_format, {})
+
+    def test_format_success(self):
+        to_format = {
+            "a": "{b}",
+        }
+
+        final_value = "formatted"
+
+        format_variables = {
+            "b": final_value,
+        }
+
+        assert format_keys(to_format, format_variables)["a"] == final_value
