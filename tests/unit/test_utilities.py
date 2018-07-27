@@ -267,7 +267,6 @@ class TestMatchRecursive:
         check_keys_match_recursive(a, b, [], strict=False)
 
 
-
 @pytest.fixture(name="test_yaml")
 def fix_test_yaml():
     text = dedent("""
