@@ -36,7 +36,9 @@ COMPARATORS = {
     'contains': lambda x, y: x and operator.contains(x, y),  # is y in x
     'contained_by': lambda x, y: y and operator.contains(y, x),  # is x in y
     'regex': lambda x, y: regex_compare(str(x), str(y)),
-    'type': test_type
+    'type': test_type,
+    'exists': lambda x: x is not None,
+    'not_exists': lambda x: x is None
 }
 TYPES = {
     'none': [type(None)],
