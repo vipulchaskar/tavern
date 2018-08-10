@@ -133,6 +133,17 @@ def validate_content(response, comparisions):
         logger.debug("Searching for '%s' in '%s'", path, response.json())
         actual = jmespath.search(path, response.json())
 
+        if _operator == 'exists':
+            if not actual:
+                raise exceptions.JMESError("JMES path '{}' supposed to exist, but doesn't".format(path))
+            else:
+                return
+        elif _operator == 'not_exists':
+            if actual:
+                raise exceptions.JMESError("JMES path '{}' not supposed to exist, but does".format(path))
+            else:
+                return
+
         if actual is None:
             raise exceptions.JMESError("JMES path '{}' not found in response".format(path))
 
